@@ -6,6 +6,12 @@ on:
       - main
   workflow_dispatch:
 
+  # 権限を追加
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 env:
   UNITY_VERSION: 6000.2.2f1
 
