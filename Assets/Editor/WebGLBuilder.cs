@@ -1,16 +1,27 @@
 using UnityEditor;
 using UnityEngine;
+using System.Linq;
 
-public static class WebGLBuilder
+public class WebGLBuilder
 {
-    [MenuItem("Build/Build WebGL")]
     public static void BuildWebGL()
     {
-        string[] scenes = GetScenePaths();
-        string buildPath = "Build/WebGL";
+        // ビルドに含めるシーンを取得
+        string[] scenes = EditorBuildSettings.scenes
+            .Where(scene => scene.enabled)
+            .Select(scene => scene.path)
+            .ToArray();
 
-        // WebGL用のビルド設定
-        BuildPlayerOptions buildOptions = new BuildPlayerOptions
+        if (scenes.Length == 0)
+        {
+            Debug.LogError("No scenes are enabled in Build Settings!");
+            EditorApplication.Exit(1);
+            return;
+        }
+
+        string buildPath = "build/WebGL";
+
+        BuildPlayerOptions buildPlayerOptions = new BuildPlayerOptions
         {
             scenes = scenes,
             locationPathName = buildPath,
@@ -18,41 +29,17 @@ public static class WebGLBuilder
             options = BuildOptions.None
         };
 
-        // テンプレートの設定（デフォルトテンプレート使用）
-        PlayerSettings.WebGL.template = "PROJECT:Better2020";
+        var report = BuildPipeline.BuildPlayer(buildPlayerOptions);
 
-        Debug.Log("WebGLビルドを開始します...");
-        var report = BuildPipeline.BuildPlayer(buildOptions);
-
-        if (report.summary.result == UnityEditor.Build.Reporting.BuildResult.Succeeded)
+        if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
         {
-            Debug.Log($"ビルド成功: {report.summary.totalSize} bytes");
+            Debug.LogError($"Build failed: {report.summary.result}");
+            EditorApplication.Exit(1);
         }
         else
         {
-            Debug.LogError($"ビルド失敗: {report.summary.result}");
-            EditorApplication.Exit(1);
+            Debug.Log($"Build succeeded: {report.summary.totalSize} bytes");
+            EditorApplication.Exit(0);
         }
-    }
-
-    private static string[] GetScenePaths()
-    {
-        // ビルド設定から有効なシーンを取得
-        var scenes = EditorBuildSettings.scenes;
-        var scenePaths = new string[scenes.Length];
-
-        for (int i = 0; i < scenes.Length; i++)
-        {
-            scenePaths[i] = scenes[i].path;
-        }
-
-        // シーンがない場合はエラー
-        if (scenePaths.Length == 0)
-        {
-            Debug.LogError("ビルド設定にシーンが追加されていません！");
-            EditorApplication.Exit(1);
-        }
-
-        return scenePaths;
     }
 }
