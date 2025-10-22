@@ -6,6 +6,10 @@ public class WebGLBuilder
 {
     public static void BuildWebGL()
     {
+        // GitHub Pages用の設定：圧縮を無効化
+        PlayerSettings.WebGL.compressionFormat = WebGLCompressionFormat.Disabled;
+        Debug.Log("WebGL Compression: Disabled (GitHub Pages compatible)");
+
         // ビルドに含めるシーンを取得
         string[] scenes = EditorBuildSettings.scenes
             .Where(scene => scene.enabled)
@@ -29,6 +33,7 @@ public class WebGLBuilder
             options = BuildOptions.None
         };
 
+        Debug.Log("Starting WebGL build...");
         var report = BuildPipeline.BuildPlayer(buildPlayerOptions);
 
         if (report.summary.result != UnityEditor.Build.Reporting.BuildResult.Succeeded)
