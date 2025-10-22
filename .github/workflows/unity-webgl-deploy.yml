@@ -1,0 +1,115 @@
+name: Unity WebGL Build and Deploy
+
+on:
+  push:
+    branches:
+      - main  # mainブランチへのプッシュ時に実行
+  workflow_dispatch:  # 手動実行も可能
+
+env:
+  UNITY_VERSION: 2022.3.10f1  # 使用しているUnityバージョンに変更
+
+jobs:
+  build:
+    name: Build WebGL
+    runs-on: ubuntu-latest
+    
+    steps:
+      # リポジトリのチェックアウト
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+          fetch-depth: 0
+
+      # LFSファイルのキャッシュ
+      - name: Cache LFS
+        uses: actions/cache@v3
+        with:
+          path: .git/lfs
+          key: lfs-${{ hashFiles('.lfs-assets-id') }}
+          restore-keys: |
+            lfs-
+
+      # Libraryフォルダのキャッシュ（ビルド高速化）
+      - name: Cache Library
+        uses: actions/cache@v3
+        with:
+          path: Library
+          key: Library-WebGL-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-WebGL-
+            Library-
+
+      # GameCIを使用してWebGLビルド
+      - name: Build WebGL
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: WebGL
+          unityVersion: ${{ env.UNITY_VERSION }}
+          buildMethod: WebGLBuilder.BuildWebGL
+
+      # ビルド成果物のアップロード
+      - name: Upload Build
+        uses: actions/upload-artifact@v3
+        with:
+          name: WebGL-Build
+          path: build/WebGL
+
+      # GitHub Pagesへのデプロイ
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/WebGL
+          force_orphan: true
+
+  notify:
+    name: Notify Discord
+    needs: build
+    runs-on: ubuntu-latest
+    if: always()
+    
+    steps:
+      - name: Get short commit SHA
+        id: sha
+        run: echo "short_sha=$(echo ${{ github.sha }} | cut -c1-7)" >> $GITHUB_OUTPUT
+
+      - name: Send Discord notification (Success)
+        if: needs.build.result == 'success'
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          status: success
+          title: "🎮 Unity WebGL ビルド成功！"
+          description: |
+            **プロジェクト**: ${{ github.repository }}
+            **ブランチ**: ${{ github.ref_name }}
+            **コミット**: `${{ steps.sha.outputs.short_sha }}`
+            
+            🌐 **プレイ可能URL**:
+            https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/
+            
+            コミットメッセージ: ${{ github.event.head_commit.message }}
+          color: 0x00ff00
+          username: Unity Build Bot
+
+      - name: Send Discord notification (Failure)
+        if: needs.build.result == 'failure'
+        uses: sarisia/actions-status-discord@v1
+        with:
+          webhook: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          status: failure
+          title: "❌ Unity WebGL ビルド失敗"
+          description: |
+            **プロジェクト**: ${{ github.repository }}
+            **ブランチ**: ${{ github.ref_name }}
+            **コミット**: `${{ steps.sha.outputs.short_sha }}`
+            
+            詳細: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          color: 0xff0000
+          username: Unity Build Bot
