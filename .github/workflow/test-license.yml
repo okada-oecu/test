@@ -1,0 +1,42 @@
+# ライセンステスト用ワークフロー
+# .github/workflows/test-license.yml
+
+name: Test Unity License
+
+on:
+  workflow_dispatch: {}
+
+env:
+  UNITY_VERSION: 2022.3.10f1
+
+jobs:
+  test-license:
+    name: Test License Activation
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Test Unity Activation
+        uses: game-ci/unity-builder@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+          UNITY_EMAIL: ${{ secrets.UNITY_EMAIL }}
+          UNITY_PASSWORD: ${{ secrets.UNITY_PASSWORD }}
+        with:
+          targetPlatform: WebGL
+          unityVersion: ${{ env.UNITY_VERSION }}
+          buildMethod: UnityEditor.BuildPipeline.BuildPlayer
+          
+      - name: License Test Success
+        if: success()
+        run: |
+          echo "✅ ライセンス認証成功！"
+          echo "メインのビルドワークフローが動作するはずです"
+          
+      - name: License Test Failed
+        if: failure()
+        run: |
+          echo "❌ ライセンス認証失敗"
+          echo "UNITY_LICENSE, UNITY_EMAIL, UNITY_PASSWORD を再確認してください"

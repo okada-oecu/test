@@ -7,7 +7,7 @@ on:
   workflow_dispatch:  # 手動実行も可能
 
 env:
-  UNITY_VERSION: 2022.3.10f1  # 使用しているUnityバージョンに変更
+  UNITY_VERSION: 6000.2.2f1  # 使用しているUnityバージョンに変更
 
 jobs:
   build:
