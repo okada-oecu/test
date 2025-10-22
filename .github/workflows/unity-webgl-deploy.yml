@@ -12,7 +12,7 @@ env:
 jobs:
   build:
     name: Build WebGL
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest-8-cores
     
     steps:
       # リポジトリのチェックアウト
