@@ -24,7 +24,7 @@ jobs:
 
       # LFSファイルのキャッシュ
       - name: Cache LFS
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: .git/lfs
           key: lfs-${{ hashFiles('.lfs-assets-id') }}
@@ -33,7 +33,7 @@ jobs:
 
       # Libraryフォルダのキャッシュ（ビルド高速化）
       - name: Cache Library
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: Library
           key: Library-WebGL-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
@@ -55,14 +55,14 @@ jobs:
 
       # ビルド成果物のアップロード
       - name: Upload Build
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: WebGL-Build
           path: build/WebGL
 
       # GitHub Pagesへのデプロイ
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/WebGL
